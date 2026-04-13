@@ -1,2 +1,2 @@
-[release]
-git_release = false
+[workspace]
+git_release_enable = false
