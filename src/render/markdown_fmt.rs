@@ -109,7 +109,7 @@ pub fn render(report: &Report) -> String {
             result_emoji_dmarc(row.policy_evaluated.dkim),
             result_emoji_dmarc(row.policy_evaluated.spf),
             escape(&ident.header_from),
-            escape(&ident.envelope_from),
+            ident.envelope_from.as_deref().map(escape).unwrap_or_default(),
             auth_parts.join("; "),
         ));
     }

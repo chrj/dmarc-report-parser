@@ -282,8 +282,9 @@ pub struct Identifiers {
     #[serde(default)]
     pub envelope_to: Option<String>,
 
-    /// The RFC 5321 `MAIL FROM` domain.
-    pub envelope_from: String,
+    /// The RFC 5321 `MAIL FROM` domain, if available.
+    #[serde(default)]
+    pub envelope_from: Option<String>,
 
     /// The RFC 5322 `From:` header domain.
     pub header_from: String,

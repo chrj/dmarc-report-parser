@@ -143,7 +143,10 @@ pub fn render(report: &Report) -> String {
             badge_dmarc(row.policy_evaluated.spf)
         ));
         html.push_str(&format!("<td>{}</td>", escape(&ident.header_from)));
-        html.push_str(&format!("<td>{}</td>", escape(&ident.envelope_from)));
+        html.push_str(&format!(
+            "<td>{}</td>",
+            ident.envelope_from.as_deref().map(escape).unwrap_or_default()
+        ));
 
         // Auth details column
         html.push_str("<td class=\"auth-detail\">");

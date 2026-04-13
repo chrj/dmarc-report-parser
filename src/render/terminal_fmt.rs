@@ -102,10 +102,10 @@ pub fn render(report: &Report) -> String {
         }
 
         // Identifiers
-        out.push_str(&format!(
-            "    Header From : {}   Envelope From: {}",
-            ident.header_from, ident.envelope_from,
-        ));
+        out.push_str(&format!("    Header From : {}", ident.header_from));
+        if let Some(ref env_from) = ident.envelope_from {
+            out.push_str(&format!("   Envelope From: {env_from}"));
+        }
         if let Some(ref env_to) = ident.envelope_to {
             out.push_str(&format!("   Envelope To: {env_to}"));
         }
