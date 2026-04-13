@@ -30,3 +30,5 @@ cli = ["dep:clap", "dep:colored", "dep:zip", "dep:chrono", "dep:flate2"]
 [profile.dist]
 inherits = "release"
 lto = "thin"
+pr-run-mode = "plan"
+
