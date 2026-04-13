@@ -1,5 +1,9 @@
 # dmarc-report-parser
 
+[![Crates.io](https://img.shields.io/crates/v/dmarc-report-parser)](https://crates.io/crates/dmarc-report-parser)
+[![docs.rs](https://img.shields.io/docsrs/dmarc-report-parser)](https://docs.rs/dmarc-report-parser)
+[![License: MIT](https://img.shields.io/crates/l/dmarc-report-parser)](LICENSE)
+
 An [RFC 7489](https://www.rfc-editor.org/rfc/rfc7489)-compliant DMARC aggregate report parser written in Rust.
 It can be used both as a **library** in your own Rust projects and as a **standalone CLI tool**
 for viewing reports in the terminal, as HTML, or as Markdown.
