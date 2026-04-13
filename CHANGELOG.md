@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5](https://github.com/chrj/dmarc-report-parser/compare/v0.1.4...v0.1.5) - 2026-04-13
+
+### Other
+
+- Another attempt at fixing cargo-dist. ([#15](https://github.com/chrj/dmarc-report-parser/pull/15))
+
 ## [0.1.4](https://github.com/chrj/dmarc-report-parser/compare/v0.1.3...v0.1.4) - 2026-04-13
 
 ### Other
