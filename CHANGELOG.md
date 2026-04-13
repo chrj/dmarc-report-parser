@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8](https://github.com/chrj/dmarc-report-parser/compare/v0.1.7...v0.1.8) - 2026-04-13
+
+### Other
+
+- Release automation. ([#22](https://github.com/chrj/dmarc-report-parser/pull/22))
+- Release automation. ([#21](https://github.com/chrj/dmarc-report-parser/pull/21))
+
 ## [0.1.7](https://github.com/chrj/dmarc-report-parser/compare/v0.1.6...v0.1.7) - 2026-04-13
 
 ### Other
