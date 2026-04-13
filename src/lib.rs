@@ -833,7 +833,7 @@ mod tests {
     <p>none</p><sp>none</sp><pct>100</pct>
   </policy_published>
   <record>
-    <row><source_ip>1.2.3.4</source_ip><count>1</count>
+    <row><source_ip>192.0.2.1</source_ip><count>1</count>
       <policy_evaluated><disposition>none</disposition><dkim>pass</dkim><spf>pass</spf></policy_evaluated>
     </row>
     <identifiers><envelope_from>example.com</envelope_from><header_from>example.com</header_from></identifiers>
@@ -875,15 +875,15 @@ mod tests {
     <report_id>r1</report_id>
     <date_range><begin>0</begin><end>1</end></date_range>
   </report_metadata>
-  <policy_published><domain>e.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
+  <policy_published><domain>example.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
   <record>
-    <row><source_ip>1.2.3.4</source_ip><count>1</count>
+    <row><source_ip>192.0.2.1</source_ip><count>1</count>
       <policy_evaluated><disposition>none</disposition><dkim>pass</dkim><spf>pass</spf></policy_evaluated>
     </row>
-    <identifiers><envelope_from>e.com</envelope_from><header_from>e.com</header_from></identifiers>
+    <identifiers><envelope_from>example.com</envelope_from><header_from>example.com</header_from></identifiers>
     <auth_results>
-      <dkim><domain>e.com</domain><result>{s}</result></dkim>
-      <spf><domain>e.com</domain><result>pass</result></spf>
+      <dkim><domain>example.com</domain><result>{s}</result></dkim>
+      <spf><domain>example.com</domain><result>pass</result></spf>
     </auth_results>
   </record>
 </feedback>"#
@@ -917,14 +917,14 @@ mod tests {
     <report_id>r1</report_id>
     <date_range><begin>0</begin><end>1</end></date_range>
   </report_metadata>
-  <policy_published><domain>e.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
+  <policy_published><domain>example.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
   <record>
-    <row><source_ip>1.2.3.4</source_ip><count>1</count>
+    <row><source_ip>192.0.2.1</source_ip><count>1</count>
       <policy_evaluated><disposition>none</disposition><dkim>pass</dkim><spf>pass</spf></policy_evaluated>
     </row>
-    <identifiers><envelope_from>e.com</envelope_from><header_from>e.com</header_from></identifiers>
+    <identifiers><envelope_from>example.com</envelope_from><header_from>example.com</header_from></identifiers>
     <auth_results>
-      <spf><domain>e.com</domain><result>{s}</result></spf>
+      <spf><domain>example.com</domain><result>{s}</result></spf>
     </auth_results>
   </record>
 </feedback>"#
@@ -957,17 +957,17 @@ mod tests {
     <report_id>r1</report_id>
     <date_range><begin>0</begin><end>1</end></date_range>
   </report_metadata>
-  <policy_published><domain>e.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
+  <policy_published><domain>example.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
   <record>
-    <row><source_ip>1.2.3.4</source_ip><count>1</count>
+    <row><source_ip>192.0.2.1</source_ip><count>1</count>
       <policy_evaluated>
         <disposition>none</disposition><dkim>pass</dkim><spf>pass</spf>
         <reason><type>{s}</type></reason>
       </policy_evaluated>
     </row>
-    <identifiers><envelope_from>e.com</envelope_from><header_from>e.com</header_from></identifiers>
+    <identifiers><envelope_from>example.com</envelope_from><header_from>example.com</header_from></identifiers>
     <auth_results>
-      <spf><domain>e.com</domain><result>pass</result></spf>
+      <spf><domain>example.com</domain><result>pass</result></spf>
     </auth_results>
   </record>
 </feedback>"#
@@ -995,13 +995,13 @@ mod tests {
     <report_id>r1</report_id>
     <date_range><begin>0</begin><end>1</end></date_range>
   </report_metadata>
-  <policy_published><domain>e.com</domain><p>{s}</p><sp>{s}</sp><pct>100</pct></policy_published>
+  <policy_published><domain>example.com</domain><p>{s}</p><sp>{s}</sp><pct>100</pct></policy_published>
   <record>
-    <row><source_ip>1.2.3.4</source_ip><count>1</count>
+    <row><source_ip>192.0.2.1</source_ip><count>1</count>
       <policy_evaluated><disposition>{s}</disposition><dkim>pass</dkim><spf>pass</spf></policy_evaluated>
     </row>
-    <identifiers><envelope_from>e.com</envelope_from><header_from>e.com</header_from></identifiers>
-    <auth_results><spf><domain>e.com</domain><result>pass</result></spf></auth_results>
+    <identifiers><envelope_from>example.com</envelope_from><header_from>example.com</header_from></identifiers>
+    <auth_results><spf><domain>example.com</domain><result>pass</result></spf></auth_results>
   </record>
 </feedback>"#
             );
@@ -1023,17 +1023,17 @@ mod tests {
     <report_id>r1</report_id>
     <date_range><begin>0</begin><end>1</end></date_range>
   </report_metadata>
-  <policy_published><domain>e.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
+  <policy_published><domain>example.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
   <record>
-    <row><source_ip>1.2.3.4</source_ip><count>1</count>
+    <row><source_ip>192.0.2.1</source_ip><count>1</count>
       <policy_evaluated>
         <disposition>none</disposition><dkim>pass</dkim><spf>pass</spf>
         <reason><type>forwarded</type><comment>via list</comment></reason>
         <reason><type>mailing_list</type></reason>
       </policy_evaluated>
     </row>
-    <identifiers><envelope_from>e.com</envelope_from><header_from>e.com</header_from></identifiers>
-    <auth_results><spf><domain>e.com</domain><result>pass</result></spf></auth_results>
+    <identifiers><envelope_from>example.com</envelope_from><header_from>example.com</header_from></identifiers>
+    <auth_results><spf><domain>example.com</domain><result>pass</result></spf></auth_results>
   </record>
 </feedback>"#;
 
@@ -1055,13 +1055,13 @@ mod tests {
     <report_id>r1</report_id>
     <date_range><begin>0</begin><end>1</end></date_range>
   </report_metadata>
-  <policy_published><domain>e.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
+  <policy_published><domain>example.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
   <record>
     <row><source_ip>2001:db8::1</source_ip><count>1</count>
       <policy_evaluated><disposition>none</disposition><dkim>pass</dkim><spf>pass</spf></policy_evaluated>
     </row>
-    <identifiers><envelope_from>e.com</envelope_from><header_from>e.com</header_from></identifiers>
-    <auth_results><spf><domain>e.com</domain><result>pass</result></spf></auth_results>
+    <identifiers><envelope_from>example.com</envelope_from><header_from>example.com</header_from></identifiers>
+    <auth_results><spf><domain>example.com</domain><result>pass</result></spf></auth_results>
   </record>
 </feedback>"#;
 
@@ -1078,19 +1078,19 @@ mod tests {
     <report_id>r1</report_id>
     <date_range><begin>0</begin><end>1</end></date_range>
   </report_metadata>
-  <policy_published><domain>e.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
+  <policy_published><domain>example.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
   <record>
-    <row><source_ip>1.2.3.4</source_ip><count>1</count>
+    <row><source_ip>192.0.2.1</source_ip><count>1</count>
       <policy_evaluated><disposition>none</disposition><dkim>pass</dkim><spf>pass</spf></policy_evaluated>
     </row>
-    <identifiers><header_from>e.com</header_from></identifiers>
-    <auth_results><spf><domain>e.com</domain><result>pass</result></spf></auth_results>
+    <identifiers><header_from>example.com</header_from></identifiers>
+    <auth_results><spf><domain>example.com</domain><result>pass</result></spf></auth_results>
   </record>
 </feedback>"#;
 
         let report = parse(xml).unwrap();
         assert!(report.records[0].identifiers.envelope_from.is_none());
-        assert_eq!(report.records[0].identifiers.header_from, "e.com");
+        assert_eq!(report.records[0].identifiers.header_from, "example.com");
     }
 
     #[test]
