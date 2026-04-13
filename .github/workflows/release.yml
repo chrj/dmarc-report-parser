@@ -41,6 +41,8 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
           - os: macos-latest
             target: aarch64-apple-darwin
           - os: windows-latest
@@ -59,7 +61,7 @@ jobs:
         run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/axodotdev/cargo-dist/releases/latest/download/cargo-dist-installer.sh | sh
 
       - name: Run cargo-dist build
-        run: cargo dist build --target ${{ matrix.target }} --artifacts=local --allow-all --output-format json > dist-manifest.json
+        run: cargo dist build --target ${{ matrix.target }} --artifacts=local --allow-dirty --output-format json > dist-manifest.json
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
