@@ -6,6 +6,7 @@ description = "An RFC 7489-compliant DMARC aggregate report parser"
 license = "MIT"
 keywords = ["dmarc", "email", "parser", "rfc7489", "xml"]
 categories = ["email", "parser-implementations"]
+repository = "https://github.com/chrj/dmarc-report-parser"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -25,5 +26,9 @@ required-features = ["cli"]
 [features]
 cli = ["dep:clap", "dep:colored", "dep:zip", "dep:chrono", "dep:flate2"]
 
-[workspace.metadata.dist]
-targets = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-pc-windows-msvc"]
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+pr-run-mode = "plan"
+
