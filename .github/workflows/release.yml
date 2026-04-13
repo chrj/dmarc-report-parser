@@ -59,7 +59,7 @@ jobs:
         run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/axodotdev/cargo-dist/releases/latest/download/cargo-dist-installer.sh | sh
 
       - name: Run cargo-dist build
-        run: cargo dist build --target ${{ matrix.target }} --output-format json > dist-manifest.json
+        run: cargo dist build --target ${{ matrix.target }} --artifacts=build-runtime --output-format json > dist-manifest.json
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
