@@ -1,0 +1,43 @@
+name: Delete Merged Branch
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  delete-branch:
+    name: Delete PR branch after merge
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref != github.event.repository.default_branch
+    runs-on: self-hosted
+    timeout-minutes: 5
+
+    steps:
+      - name: Delete merged branch
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const headRef = context.payload.pull_request.head.ref;
+
+            try {
+              await github.rest.git.deleteRef({
+                owner,
+                repo,
+                ref: `heads/${headRef}`,
+              });
+              core.info(`Deleted merged branch ${headRef}`);
+            } catch (error) {
+              // Gracefully handle already deleted or protected branches.
+              if (error.status === 404 || error.status === 422) {
+                core.warning(`Could not delete branch ${headRef}: ${error.message}`);
+                return;
+              }
+              throw error;
+            }
