@@ -145,7 +145,11 @@ pub fn render(report: &Report) -> String {
         html.push_str(&format!("<td>{}</td>", escape(&ident.header_from)));
         html.push_str(&format!(
             "<td>{}</td>",
-            ident.envelope_from.as_deref().map(escape).unwrap_or_default()
+            ident
+                .envelope_from
+                .as_deref()
+                .map(escape)
+                .unwrap_or_default()
         ));
 
         // Auth details column
