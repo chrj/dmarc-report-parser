@@ -1,6 +1,6 @@
 [package]
 name = "dmarc-report-parser"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 description = "An RFC 7489-compliant DMARC aggregate report parser"
 license = "MIT"
