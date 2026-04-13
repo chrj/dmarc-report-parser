@@ -531,7 +531,10 @@ mod tests {
 
         // identifiers
         assert!(record.identifiers.envelope_to.is_none());
-        assert_eq!(record.identifiers.envelope_from, "acme.example");
+        assert_eq!(
+            record.identifiers.envelope_from.as_deref(),
+            Some("acme.example")
+        );
         assert_eq!(record.identifiers.header_from, "acme.example");
 
         // auth results
@@ -639,7 +642,10 @@ mod tests {
             record.identifiers.envelope_to,
             Some("example.com".to_string())
         );
-        assert_eq!(record.identifiers.envelope_from, "sender.example");
+        assert_eq!(
+            record.identifiers.envelope_from.as_deref(),
+            Some("sender.example")
+        );
 
         // DKIM auth result
         assert_eq!(record.auth_results.dkim.len(), 1);
@@ -1061,6 +1067,30 @@ mod tests {
 
         let report = parse(xml).unwrap();
         assert_eq!(report.records[0].row.source_ip, "2001:db8::1");
+    }
+
+    #[test]
+    fn parse_missing_envelope_from() {
+        let xml = r#"<?xml version="1.0"?>
+<feedback>
+  <report_metadata>
+    <org_name>R</org_name><email>r@r.example</email>
+    <report_id>r1</report_id>
+    <date_range><begin>0</begin><end>1</end></date_range>
+  </report_metadata>
+  <policy_published><domain>e.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
+  <record>
+    <row><source_ip>1.2.3.4</source_ip><count>1</count>
+      <policy_evaluated><disposition>none</disposition><dkim>pass</dkim><spf>pass</spf></policy_evaluated>
+    </row>
+    <identifiers><header_from>e.com</header_from></identifiers>
+    <auth_results><spf><domain>e.com</domain><result>pass</result></spf></auth_results>
+  </record>
+</feedback>"#;
+
+        let report = parse(xml).unwrap();
+        assert!(report.records[0].identifiers.envelope_from.is_none());
+        assert_eq!(report.records[0].identifiers.header_from, "e.com");
     }
 
     #[test]
