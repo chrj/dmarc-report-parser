@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/chrj/dmarc-report-parser/compare/v0.1.1...v0.1.2) - 2026-04-13
+
+### Other
+
+- Added a couple badges to the README. ([#10](https://github.com/chrj/dmarc-report-parser/pull/10))
+- Build local artifacts only. ([#8](https://github.com/chrj/dmarc-report-parser/pull/8))
+
 ## [0.1.1](https://github.com/chrj/dmarc-report-parser/compare/v0.1.0...v0.1.1) - 2026-04-13
 
 ### Fixed
