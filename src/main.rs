@@ -61,7 +61,8 @@ fn run(cli: Cli) -> Result<(), String> {
 
     match cli.output {
         Some(path) => {
-            fs::write(&path, &rendered).map_err(|e| format!("Error writing to {}: {e}", path.display()))?;
+            fs::write(&path, &rendered)
+                .map_err(|e| format!("Error writing to {}: {e}", path.display()))?;
             eprintln!("Report written to {}", path.display());
         }
         None => print!("{rendered}"),
