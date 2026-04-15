@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feedback>
+  <report_metadata>
+    <org_name>Acme</org_name>
+    <email>postmaster@acme.example</email>
+    <report_id>20130901.r.acme.example</report_id>
+    <date_range>
+      <begin>1377993600</begin>
+      <end>1378080000</end>
+    </date_range>
+  </report_metadata>
+  <policy_published>
+    <domain>acme.example</domain>
+    <p>none</p>
+    <sp>none</sp>
+    <pct>100</pct>
+  </policy_published>
+  <record>
+    <row>
+      <source_ip>192.0.2.1</source_ip>
+      <count>2</count>
+      <policy_evaluated>
+        <disposition>none</disposition>
+        <dkim>pass</dkim>
+        <spf>pass</spf>
+      </policy_evaluated>
+    </row>
+    <identifiers>
+      <envelope_from>acme.example</envelope_from>
+      <header_from>acme.example</header_from>
+    </identifiers>
+    <auth_results>
+      <spf>
+        <domain>acme.example</domain>
+        <result>pass</result>
+      </spf>
+    </auth_results>
+  </record>
+</feedback>

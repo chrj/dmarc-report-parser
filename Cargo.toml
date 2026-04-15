@@ -26,6 +26,11 @@ required-features = ["cli"]
 [features]
 cli = ["dep:clap", "dep:colored", "dep:zip", "dep:chrono", "dep:flate2"]
 
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.1"
+tempfile = "3.10"
+
 # The profile that 'dist' will build with
 [profile.dist]
 inherits = "release"

@@ -44,14 +44,14 @@ enum Format {
 
 fn main() {
     let cli = Cli::parse();
+    if let Err(e) = run(cli) {
+        eprintln!("Error: {e}");
+        std::process::exit(1);
+    }
+}
 
-    let report = match load_report(&cli.file) {
-        Ok(r) => r,
-        Err(e) => {
-            eprintln!("Error: {e}");
-            std::process::exit(1);
-        }
-    };
+fn run(cli: Cli) -> Result<(), String> {
+    let report = load_report(&cli.file)?;
 
     let rendered = match cli.format {
         Format::Terminal => render::terminal(&report),
@@ -61,14 +61,13 @@ fn main() {
 
     match cli.output {
         Some(path) => {
-            if let Err(e) = fs::write(&path, &rendered) {
-                eprintln!("Error writing to {}: {e}", path.display());
-                std::process::exit(1);
-            }
+            fs::write(&path, &rendered).map_err(|e| format!("Error writing to {}: {e}", path.display()))?;
             eprintln!("Report written to {}", path.display());
         }
         None => print!("{rendered}"),
     }
+
+    Ok(())
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -76,18 +75,16 @@ fn main() {
 // ──────────────────────────────────────────────────────────────────────────────
 
 fn load_report(path: &PathBuf) -> Result<Report, String> {
-    let filename = path
-        .file_name()
-        .and_then(|n| n.to_str())
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
         .unwrap_or("")
-        .to_lowercase();
+        .to_ascii_lowercase();
 
-    let xml_bytes = if filename.ends_with(".zip") {
-        extract_xml_from_zip(path).map_err(|e| format!("Failed to read zip: {e}"))?
-    } else if filename.ends_with(".gz") {
-        decompress_gzip(path).map_err(|e| format!("Failed to decompress gzip: {e}"))?
-    } else {
-        fs::read(path).map_err(|e| format!("Failed to read file: {e}"))?
+    let xml_bytes = match ext.as_str() {
+        "zip" => extract_xml_from_zip(path).map_err(|e| format!("Failed to read zip: {e}"))?,
+        "gz" => decompress_gzip(path).map_err(|e| format!("Failed to decompress gzip: {e}"))?,
+        _ => fs::read(path).map_err(|e| format!("Failed to read file: {e}"))?,
     };
 
     let xml =
