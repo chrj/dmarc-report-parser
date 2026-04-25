@@ -96,14 +96,8 @@ pub fn render_aggregate(agg: &Aggregate) -> String {
             format_timestamp(end)
         ));
     }
-    md.push_str(&format!(
-        "- **Total Records:** {}\n",
-        agg.records().count()
-    ));
-    md.push_str(&format!(
-        "- **Total Messages:** {}\n",
-        agg.total_messages()
-    ));
+    md.push_str(&format!("- **Total Records:** {}\n", agg.records().count()));
+    md.push_str(&format!("- **Total Messages:** {}\n", agg.total_messages()));
     let pass_count: u64 = agg
         .records()
         .filter(|(_, r)| {
@@ -111,7 +105,9 @@ pub fn render_aggregate(agg: &Aggregate) -> String {
         })
         .map(|(_, r)| r.row.count)
         .sum();
-    md.push_str(&format!("- **Fully Passing (DKIM + SPF):** {pass_count}\n\n"));
+    md.push_str(&format!(
+        "- **Fully Passing (DKIM + SPF):** {pass_count}\n\n"
+    ));
 
     // Contributing reports
     md.push_str("## Reports\n\n");
