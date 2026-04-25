@@ -72,7 +72,7 @@ pub fn render(report: &Report) -> String {
         &mut html,
         "Period",
         &format!(
-            "{} &rarr; {}",
+            "{} → {}",
             format_timestamp(meta.date_range.begin),
             format_timestamp(meta.date_range.end)
         ),
@@ -153,7 +153,7 @@ pub fn render_aggregate(agg: &Aggregate) -> String {
     html.push_str("</div>\n");
     if let Some((begin, end)) = agg.date_span() {
         html.push_str(&format!(
-            "<dl><dt>Period</dt><dd>{} &rarr; {}</dd></dl>\n",
+            "<dl><dt>Period</dt><dd>{} → {}</dd></dl>\n",
             format_timestamp(begin),
             format_timestamp(end)
         ));
@@ -178,7 +178,7 @@ pub fn render_aggregate(agg: &Aggregate) -> String {
         let m = &r.report_metadata;
         let messages: u64 = r.records.iter().map(|rec| rec.row.count).sum();
         html.push_str(&format!(
-            "<tr><td>{}</td><td>{}</td><td>{}</td><td>{} &rarr; {}</td><td>{}</td><td>{}</td></tr>\n",
+            "<tr><td>{}</td><td>{}</td><td>{}</td><td>{} → {}</td><td>{}</td><td>{}</td></tr>\n",
             escape(&m.org_name),
             escape(&m.report_id),
             escape(&r.policy_published.domain),

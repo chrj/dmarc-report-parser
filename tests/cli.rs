@@ -125,3 +125,31 @@ fn minimal_xml_to_file_html() {
     assert!(content.contains("<!DOCTYPE html>"));
     assert!(content.contains("Acme"));
 }
+
+#[test]
+fn html_period_separator_is_not_double_escaped() {
+    // Regression: dl_row escapes its value, so callers must pass plain text.
+    // Previously the Period row used the "&rarr;" HTML entity, which got
+    // re-escaped to "&amp;rarr;" and rendered literally in the browser.
+    let dir = tempdir().expect("Failed to create temp dir");
+    let output_path = dir.path().join("report.html");
+
+    let mut cmd = Command::cargo_bin("dmarc-report").unwrap();
+    cmd.arg("tests/fixtures/minimal.xml")
+        .arg("--format")
+        .arg("html")
+        .arg("--output")
+        .arg(&output_path);
+
+    cmd.assert().success();
+
+    let content = fs::read_to_string(&output_path).expect("Failed to read output file");
+    assert!(
+        !content.contains("&amp;rarr;"),
+        "Period separator was double-escaped: {content}"
+    );
+    assert!(
+        content.contains("<dt>Period</dt>") && content.contains('→'),
+        "Expected a Period row containing a Unicode arrow"
+    );
+}
