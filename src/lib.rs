@@ -422,6 +422,65 @@ impl std::fmt::Display for SpfResult {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// Aggregate view across multiple reports
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// A combined view across multiple DMARC aggregate reports.
+///
+/// Each underlying [`Report`] retains its own metadata and `policy_published`
+/// — there is intentionally no synthetic merged report, since fields like
+/// `org_name`, `report_id`, and `date_range` cannot be honestly combined.
+/// Use [`Aggregate::records`] to iterate every record paired with the report
+/// it came from.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Aggregate {
+    /// The reports that make up the aggregate, in the order they were added.
+    pub reports: Vec<Report>,
+}
+
+impl Aggregate {
+    /// Build an aggregate from a collection of reports.
+    pub fn from_reports(reports: Vec<Report>) -> Self {
+        Self { reports }
+    }
+
+    /// Iterator over every record across every report, paired with the
+    /// [`Report`] it came from.
+    pub fn records(&self) -> impl Iterator<Item = (&Report, &Record)> {
+        self.reports
+            .iter()
+            .flat_map(|r| r.records.iter().map(move |rec| (r, rec)))
+    }
+
+    /// Sum of `row.count` across every record.
+    pub fn total_messages(&self) -> u64 {
+        self.records().map(|(_, rec)| rec.row.count).sum()
+    }
+
+    /// Earliest `begin` and latest `end` across all reports' date ranges.
+    /// Returns `None` if the aggregate contains no reports.
+    pub fn date_span(&self) -> Option<(i64, i64)> {
+        let begin = self
+            .reports
+            .iter()
+            .map(|r| r.report_metadata.date_range.begin)
+            .min()?;
+        let end = self
+            .reports
+            .iter()
+            .map(|r| r.report_metadata.date_range.end)
+            .max()?;
+        Some((begin, end))
+    }
+}
+
+impl From<Vec<Report>> for Aggregate {
+    fn from(reports: Vec<Report>) -> Self {
+        Self::from_reports(reports)
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // Trait implementations for idiomatic Rust usage
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -1174,6 +1233,97 @@ mod tests {
     fn display_spf_domain_scope() {
         assert_eq!(SpfDomainScope::Helo.to_string(), "helo");
         assert_eq!(SpfDomainScope::Mfrom.to_string(), "mfrom");
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Aggregate
+    // ──────────────────────────────────────────────────────────────────────────
+
+    fn report_with(report_id: &str, begin: i64, end: i64, counts: &[u64]) -> Report {
+        let records: String = counts
+            .iter()
+            .map(|c| {
+                format!(
+                    r#"<record>
+    <row><source_ip>192.0.2.1</source_ip><count>{c}</count>
+      <policy_evaluated><disposition>none</disposition><dkim>pass</dkim><spf>pass</spf></policy_evaluated>
+    </row>
+    <identifiers><envelope_from>example.com</envelope_from><header_from>example.com</header_from></identifiers>
+    <auth_results><spf><domain>example.com</domain><result>pass</result></spf></auth_results>
+  </record>"#
+                )
+            })
+            .collect();
+
+        let xml = format!(
+            r#"<?xml version="1.0"?>
+<feedback>
+  <report_metadata>
+    <org_name>R</org_name><email>r@r.example</email>
+    <report_id>{report_id}</report_id>
+    <date_range><begin>{begin}</begin><end>{end}</end></date_range>
+  </report_metadata>
+  <policy_published><domain>example.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
+  {records}
+</feedback>"#
+        );
+        parse(&xml).unwrap()
+    }
+
+    #[test]
+    fn aggregate_empty() {
+        let agg = Aggregate::from_reports(vec![]);
+        assert_eq!(agg.records().count(), 0);
+        assert_eq!(agg.total_messages(), 0);
+        assert_eq!(agg.date_span(), None);
+    }
+
+    #[test]
+    fn aggregate_single_report() {
+        let agg = Aggregate::from_reports(vec![report_with("r1", 100, 200, &[3, 5])]);
+        assert_eq!(agg.records().count(), 2);
+        assert_eq!(agg.total_messages(), 8);
+        assert_eq!(agg.date_span(), Some((100, 200)));
+    }
+
+    #[test]
+    fn aggregate_total_messages_sums_across_reports() {
+        let agg = Aggregate::from_reports(vec![
+            report_with("r1", 0, 1, &[1, 2]),
+            report_with("r2", 0, 1, &[4]),
+            report_with("r3", 0, 1, &[10, 20, 30]),
+        ]);
+        assert_eq!(agg.total_messages(), 1 + 2 + 4 + 10 + 20 + 30);
+    }
+
+    #[test]
+    fn aggregate_date_span_picks_earliest_begin_and_latest_end() {
+        let agg = Aggregate::from_reports(vec![
+            report_with("r1", 500, 600, &[1]),
+            report_with("r2", 100, 200, &[1]),
+            report_with("r3", 300, 900, &[1]),
+        ]);
+        assert_eq!(agg.date_span(), Some((100, 900)));
+    }
+
+    #[test]
+    fn aggregate_records_pair_with_source_report() {
+        let agg = Aggregate::from_reports(vec![
+            report_with("r1", 0, 1, &[1, 2]),
+            report_with("r2", 0, 1, &[3]),
+        ]);
+        let pairs: Vec<(&str, u64)> = agg
+            .records()
+            .map(|(r, rec)| (r.report_metadata.report_id.as_str(), rec.row.count))
+            .collect();
+        assert_eq!(pairs, vec![("r1", 1), ("r1", 2), ("r2", 3)]);
+    }
+
+    #[test]
+    fn aggregate_from_vec_via_into() {
+        let reports = vec![report_with("r1", 0, 1, &[7])];
+        let agg: Aggregate = reports.into();
+        assert_eq!(agg.total_messages(), 7);
     }
 
     #[test]
