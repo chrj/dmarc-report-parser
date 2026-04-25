@@ -1,15 +1,10 @@
-use dmarc_report_parser::{DkimResult, DmarcResult, Report, SpfResult};
+use dmarc_report_parser::{Aggregate, DkimResult, DmarcResult, Record, Report, SpfResult};
 
-use super::{alignment_label, dkim_pass, dmarc_pass, format_timestamp, spf_pass};
+use super::{
+    aggregate_summary, alignment_label, dkim_pass, dmarc_pass, format_timestamp, spf_pass,
+};
 
-/// Render a DMARC report as a standalone HTML document with embedded styles.
-pub fn render(report: &Report) -> String {
-    let meta = &report.report_metadata;
-    let pol = &report.policy_published;
-    let total_messages: u64 = report.records.iter().map(|r| r.row.count).sum();
-
-    let mut html = String::from(
-        r#"<!DOCTYPE html>
+const HTML_HEAD: &str = r#"<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -49,8 +44,15 @@ pub fn render(report: &Report) -> String {
 </style>
 </head>
 <body>
-"#,
-    );
+"#;
+
+/// Render a DMARC report as a standalone HTML document with embedded styles.
+pub fn render(report: &Report) -> String {
+    let meta = &report.report_metadata;
+    let pol = &report.policy_published;
+    let total_messages: u64 = report.records.iter().map(|r| r.row.count).sum();
+
+    let mut html = String::from(HTML_HEAD);
 
     // Header
     html.push_str(&format!(
@@ -70,7 +72,7 @@ pub fn render(report: &Report) -> String {
         &mut html,
         "Period",
         &format!(
-            "{} &rarr; {}",
+            "{} → {}",
             format_timestamp(meta.date_range.begin),
             format_timestamp(meta.date_range.end)
         ),
@@ -126,58 +128,7 @@ pub fn render(report: &Report) -> String {
     html.push_str("</tr>\n</thead>\n<tbody>\n");
 
     for record in &report.records {
-        let row = &record.row;
-        let ident = &record.identifiers;
-        let auth = &record.auth_results;
-
-        html.push_str("<tr>");
-        html.push_str(&format!("<td>{}</td>", escape(&row.source_ip)));
-        html.push_str(&format!("<td>{}</td>", row.count));
-        html.push_str(&format!("<td>{}</td>", row.policy_evaluated.disposition));
-        html.push_str(&format!(
-            "<td>{}</td>",
-            badge_dmarc(row.policy_evaluated.dkim)
-        ));
-        html.push_str(&format!(
-            "<td>{}</td>",
-            badge_dmarc(row.policy_evaluated.spf)
-        ));
-        html.push_str(&format!("<td>{}</td>", escape(&ident.header_from)));
-        html.push_str(&format!(
-            "<td>{}</td>",
-            ident
-                .envelope_from
-                .as_deref()
-                .map(escape)
-                .unwrap_or_default()
-        ));
-
-        // Auth details column
-        html.push_str("<td class=\"auth-detail\">");
-        for dkim in &auth.dkim {
-            html.push_str(&format!(
-                "DKIM: {} <em>{}</em>",
-                badge_dkim(dkim.result),
-                escape(&dkim.domain)
-            ));
-            if let Some(ref sel) = dkim.selector {
-                html.push_str(&format!(" (sel={})", escape(sel)));
-            }
-            html.push_str("<br>");
-        }
-        for spf in &auth.spf {
-            html.push_str(&format!(
-                "SPF: {} <em>{}</em>",
-                badge_spf(spf.result),
-                escape(&spf.domain)
-            ));
-            if let Some(ref scope) = spf.scope {
-                html.push_str(&format!(" ({})", scope));
-            }
-            html.push_str("<br>");
-        }
-        html.push_str("</td>");
-        html.push_str("</tr>\n");
+        html.push_str(&record_row(record, None));
     }
 
     html.push_str("</tbody>\n</table>\n</div>\n");
@@ -185,8 +136,149 @@ pub fn render(report: &Report) -> String {
     html
 }
 
+/// Render an aggregate of multiple DMARC reports as a standalone HTML document.
+pub fn render_aggregate(agg: &Aggregate) -> String {
+    let mut html = String::from(HTML_HEAD);
+
+    html.push_str("<h1>DMARC Aggregate Report</h1>\n");
+
+    let (record_count, total_messages, pass_count) = aggregate_summary(agg);
+
+    // Overview card
+    html.push_str("<div class=\"card\">\n<h2>Overview</h2>\n<div class=\"summary\">\n");
+    summary_item(&mut html, &agg.reports.len().to_string(), "Reports");
+    summary_item(&mut html, &record_count.to_string(), "Records");
+    summary_item(&mut html, &total_messages.to_string(), "Messages");
+    summary_item(&mut html, &pass_count.to_string(), "Fully Passing");
+    html.push_str("</div>\n");
+    if let Some((begin, end)) = agg.date_span() {
+        html.push_str(&format!(
+            "<dl><dt>Period</dt><dd>{} → {}</dd></dl>\n",
+            format_timestamp(begin),
+            format_timestamp(end)
+        ));
+    }
+    html.push_str("</div>\n");
+
+    // Contributing reports
+    html.push_str("<div class=\"card\">\n<h2>Reports</h2>\n");
+    html.push_str("<table>\n<thead>\n<tr>");
+    for hdr in &[
+        "Organization",
+        "Report ID",
+        "Domain",
+        "Period",
+        "Records",
+        "Messages",
+    ] {
+        html.push_str(&format!("<th>{hdr}</th>"));
+    }
+    html.push_str("</tr>\n</thead>\n<tbody>\n");
+    for r in &agg.reports {
+        let m = &r.report_metadata;
+        let messages: u64 = r.records.iter().map(|rec| rec.row.count).sum();
+        html.push_str(&format!(
+            "<tr><td>{}</td><td>{}</td><td>{}</td><td>{} → {}</td><td>{}</td><td>{}</td></tr>\n",
+            escape(&m.org_name),
+            escape(&m.report_id),
+            escape(&r.policy_published.domain),
+            format_timestamp(m.date_range.begin),
+            format_timestamp(m.date_range.end),
+            r.records.len(),
+            messages,
+        ));
+    }
+    html.push_str("</tbody>\n</table>\n</div>\n");
+
+    // Combined records table
+    html.push_str("<div class=\"card\">\n<h2>Records</h2>\n");
+    html.push_str("<table>\n<thead>\n<tr>");
+    for hdr in &[
+        "Report",
+        "Source IP",
+        "Count",
+        "Disposition",
+        "DKIM",
+        "SPF",
+        "Header From",
+        "Envelope From",
+        "Auth Details",
+    ] {
+        html.push_str(&format!("<th>{hdr}</th>"));
+    }
+    html.push_str("</tr>\n</thead>\n<tbody>\n");
+    for (report, record) in agg.records() {
+        html.push_str(&record_row(record, Some(&report.report_metadata.report_id)));
+    }
+    html.push_str("</tbody>\n</table>\n</div>\n");
+
+    html.push_str("</body>\n</html>\n");
+    html
+}
+
+fn record_row(record: &Record, report_id: Option<&str>) -> String {
+    let row = &record.row;
+    let ident = &record.identifiers;
+    let auth = &record.auth_results;
+
+    let mut s = String::from("<tr>");
+    if let Some(id) = report_id {
+        s.push_str(&format!("<td>{}</td>", escape(id)));
+    }
+    s.push_str(&format!("<td>{}</td>", escape(&row.source_ip)));
+    s.push_str(&format!("<td>{}</td>", row.count));
+    s.push_str(&format!("<td>{}</td>", row.policy_evaluated.disposition));
+    s.push_str(&format!(
+        "<td>{}</td>",
+        badge_dmarc(row.policy_evaluated.dkim)
+    ));
+    s.push_str(&format!(
+        "<td>{}</td>",
+        badge_dmarc(row.policy_evaluated.spf)
+    ));
+    s.push_str(&format!("<td>{}</td>", escape(&ident.header_from)));
+    s.push_str(&format!(
+        "<td>{}</td>",
+        ident
+            .envelope_from
+            .as_deref()
+            .map(escape)
+            .unwrap_or_default()
+    ));
+
+    s.push_str("<td class=\"auth-detail\">");
+    for dkim in &auth.dkim {
+        s.push_str(&format!(
+            "DKIM: {} <em>{}</em>",
+            badge_dkim(dkim.result),
+            escape(&dkim.domain)
+        ));
+        if let Some(ref sel) = dkim.selector {
+            s.push_str(&format!(" (sel={})", escape(sel)));
+        }
+        s.push_str("<br>");
+    }
+    for spf in &auth.spf {
+        s.push_str(&format!(
+            "SPF: {} <em>{}</em>",
+            badge_spf(spf.result),
+            escape(&spf.domain)
+        ));
+        if let Some(ref scope) = spf.scope {
+            s.push_str(&format!(" ({})", scope));
+        }
+        s.push_str("<br>");
+    }
+    s.push_str("</td></tr>\n");
+    s
+}
+
 fn dl_row(html: &mut String, label: &str, value: &str) {
-    html.push_str(&format!("<dt>{label}</dt><dd>{value}</dd>\n"));
+    html.push_str(&format!(
+        "<dt>{}</dt><dd>{}</dd>\n",
+        escape(label),
+        escape(value)
+    ));
 }
 
 fn summary_item(html: &mut String, value: &str, label: &str) {

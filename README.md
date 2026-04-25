@@ -15,6 +15,7 @@ for viewing reports in the terminal, as HTML, or as Markdown.
 - `FromStr`, `TryFrom<&str>`, and `TryFrom<&[u8]>` trait implementations for ergonomic usage
 - Optional CLI with colorized terminal output, HTML, and Markdown rendering
 - CLI supports `.xml`, `.xml.gz`, `.gz`, and `.zip` input files
+- CLI accepts multiple files and renders them as a single aggregate view
 
 ## Installation
 
@@ -146,14 +147,16 @@ let report = Report::try_from(xml).unwrap();
 
 ## CLI usage
 
-The `dmarc-report` CLI reads a DMARC aggregate report file and renders it in the
-chosen format.
+The `dmarc-report` CLI reads one or more DMARC aggregate report files and
+renders them in the chosen format. When multiple files are passed, the output
+is an aggregate view containing an overview, a per-report summary, and a
+combined records table.
 
 ```text
-Usage: dmarc-report [OPTIONS] <FILE>
+Usage: dmarc-report [OPTIONS] <FILES>...
 
 Arguments:
-  <FILE>  Path to a DMARC report file (.xml, .xml.gz, .zip, or .gz)
+  <FILES>...  One or more DMARC report files (.xml, .xml.gz, .zip, or .gz)
 
 Options:
   -f, --format <FORMAT>  Output format [default: terminal]
@@ -177,6 +180,9 @@ dmarc-report report.xml.gz --format markdown
 
 # Parse a report inside a zip archive
 dmarc-report report.zip
+
+# Aggregate multiple reports into a single Markdown view
+dmarc-report *.xml.gz --format markdown
 ```
 
 ## Supported types
@@ -186,6 +192,7 @@ The library exposes the full RFC 7489 Appendix C schema as Rust types:
 | Type | Description |
 |------|-------------|
 | `Report` | Top-level aggregate feedback report |
+| `Aggregate` | Combined view across multiple reports |
 | `ReportMetadata` | Report generator metadata |
 | `DateRange` | UTC time range (Unix timestamps) |
 | `PolicyPublished` | Published DMARC policy for the domain |

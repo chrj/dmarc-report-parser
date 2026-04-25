@@ -1,6 +1,8 @@
-use dmarc_report_parser::{DkimResult, DmarcResult, Report, SpfResult};
+use dmarc_report_parser::{Aggregate, DkimResult, DmarcResult, Record, Report, SpfResult};
 
-use super::{alignment_label, dkim_pass, dmarc_pass, format_timestamp, spf_pass};
+use super::{
+    aggregate_summary, alignment_label, dkim_pass, dmarc_pass, format_timestamp, spf_pass,
+};
 
 /// Render a DMARC report as Markdown.
 pub fn render(report: &Report) -> String {
@@ -73,53 +75,120 @@ pub fn render(report: &Report) -> String {
     md.push_str("|---|---|---|---|---|---|---|---|\n");
 
     for record in &report.records {
-        let row = &record.row;
-        let ident = &record.identifiers;
-        let auth = &record.auth_results;
-
-        let mut auth_parts: Vec<String> = Vec::new();
-        for dkim in &auth.dkim {
-            let mut s = format!(
-                "DKIM: {} {}",
-                result_emoji_dkim(dkim.result),
-                escape(&dkim.domain)
-            );
-            if let Some(ref sel) = dkim.selector {
-                s.push_str(&format!(" (sel={})", escape(sel)));
-            }
-            auth_parts.push(s);
-        }
-        for spf in &auth.spf {
-            let mut s = format!(
-                "SPF: {} {}",
-                result_emoji_spf(spf.result),
-                escape(&spf.domain)
-            );
-            if let Some(ref scope) = spf.scope {
-                s.push_str(&format!(" ({})", scope));
-            }
-            auth_parts.push(s);
-        }
-
-        md.push_str(&format!(
-            "| {} | {} | {} | {} | {} | {} | {} | {} |\n",
-            escape(&row.source_ip),
-            row.count,
-            row.policy_evaluated.disposition,
-            result_emoji_dmarc(row.policy_evaluated.dkim),
-            result_emoji_dmarc(row.policy_evaluated.spf),
-            escape(&ident.header_from),
-            ident
-                .envelope_from
-                .as_deref()
-                .map(escape)
-                .unwrap_or_default(),
-            auth_parts.join("; "),
-        ));
+        md.push_str(&format_record_row(record, None));
     }
 
     md.push('\n');
     md
+}
+
+/// Render an aggregate of multiple DMARC reports as Markdown.
+pub fn render_aggregate(agg: &Aggregate) -> String {
+    let mut md = String::new();
+
+    md.push_str("# DMARC Aggregate Report\n\n");
+
+    // Overview
+    md.push_str("## Overview\n\n");
+    md.push_str(&format!("- **Reports:** {}\n", agg.reports.len()));
+    if let Some((begin, end)) = agg.date_span() {
+        md.push_str(&format!(
+            "- **Period:** {} → {}\n",
+            format_timestamp(begin),
+            format_timestamp(end)
+        ));
+    }
+    let (record_count, total_messages, pass_count) = aggregate_summary(agg);
+    md.push_str(&format!("- **Total Records:** {record_count}\n"));
+    md.push_str(&format!("- **Total Messages:** {total_messages}\n"));
+    md.push_str(&format!(
+        "- **Fully Passing (DKIM + SPF):** {pass_count}\n\n"
+    ));
+
+    // Contributing reports
+    md.push_str("## Reports\n\n");
+    md.push_str("| Organization | Report ID | Domain | Period | Records | Messages |\n");
+    md.push_str("|---|---|---|---|---|---|\n");
+    for r in &agg.reports {
+        let m = &r.report_metadata;
+        let messages: u64 = r.records.iter().map(|rec| rec.row.count).sum();
+        md.push_str(&format!(
+            "| {} | {} | {} | {} → {} | {} | {} |\n",
+            escape(&m.org_name),
+            escape(&m.report_id),
+            escape(&r.policy_published.domain),
+            format_timestamp(m.date_range.begin),
+            format_timestamp(m.date_range.end),
+            r.records.len(),
+            messages,
+        ));
+    }
+    md.push('\n');
+
+    // Combined records
+    md.push_str("## Records\n\n");
+    md.push_str("| Report | Source IP | Count | Disposition | DKIM | SPF | Header From | Envelope From | Auth Details |\n");
+    md.push_str("|---|---|---|---|---|---|---|---|---|\n");
+    for (report, record) in agg.records() {
+        md.push_str(&format_record_row(
+            record,
+            Some(&report.report_metadata.report_id),
+        ));
+    }
+    md.push('\n');
+
+    md
+}
+
+fn format_record_row(record: &Record, report_id: Option<&str>) -> String {
+    let row = &record.row;
+    let ident = &record.identifiers;
+    let auth = &record.auth_results;
+
+    let mut auth_parts: Vec<String> = Vec::new();
+    for dkim in &auth.dkim {
+        let mut s = format!(
+            "DKIM: {} {}",
+            result_emoji_dkim(dkim.result),
+            escape(&dkim.domain)
+        );
+        if let Some(ref sel) = dkim.selector {
+            s.push_str(&format!(" (sel={})", escape(sel)));
+        }
+        auth_parts.push(s);
+    }
+    for spf in &auth.spf {
+        let mut s = format!(
+            "SPF: {} {}",
+            result_emoji_spf(spf.result),
+            escape(&spf.domain)
+        );
+        if let Some(ref scope) = spf.scope {
+            s.push_str(&format!(" ({})", scope));
+        }
+        auth_parts.push(s);
+    }
+
+    let prefix = match report_id {
+        Some(id) => format!("| {} |", escape(id)),
+        None => String::from("|"),
+    };
+
+    format!(
+        "{prefix} {} | {} | {} | {} | {} | {} | {} | {} |\n",
+        escape(&row.source_ip),
+        row.count,
+        row.policy_evaluated.disposition,
+        result_emoji_dmarc(row.policy_evaluated.dkim),
+        result_emoji_dmarc(row.policy_evaluated.spf),
+        escape(&ident.header_from),
+        ident
+            .envelope_from
+            .as_deref()
+            .map(escape)
+            .unwrap_or_default(),
+        auth_parts.join("; "),
+    )
 }
 
 fn result_emoji_dmarc(result: DmarcResult) -> String {

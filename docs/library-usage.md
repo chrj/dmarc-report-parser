@@ -121,6 +121,49 @@ type has two variants:
 - **`Error::Utf8`** — the input bytes are not valid UTF-8 (only from
   `parse_bytes` / `TryFrom<&[u8]>`).
 
+## Combining multiple reports
+
+If you have several parsed reports and want to view them together — for
+example to compute totals across a quarter's worth of feedback — wrap them in
+an [`Aggregate`]. It does not fabricate merged metadata; instead it preserves
+each underlying [`Report`] and lets you iterate every record paired with its
+source report.
+
+```rust
+# let xml = r#"<?xml version="1.0"?>
+# <feedback>
+#   <report_metadata>
+#     <org_name>Test</org_name><email>t@e.com</email><report_id>1</report_id>
+#     <date_range><begin>0</begin><end>86400</end></date_range>
+#   </report_metadata>
+#   <policy_published><domain>e.com</domain><p>none</p><sp>none</sp><pct>100</pct></policy_published>
+#   <record>
+#     <row><source_ip>127.0.0.1</source_ip><count>4</count>
+#       <policy_evaluated><disposition>none</disposition><dkim>pass</dkim><spf>pass</spf></policy_evaluated>
+#     </row>
+#     <identifiers><envelope_from>e.com</envelope_from><header_from>e.com</header_from></identifiers>
+#     <auth_results><spf><domain>e.com</domain><result>pass</result></spf></auth_results>
+#   </record>
+# </feedback>"#;
+use dmarc_report_parser::{parse, Aggregate};
+
+let reports = vec![parse(xml).unwrap(), parse(xml).unwrap()];
+let agg = Aggregate::from_reports(reports);
+
+assert_eq!(agg.reports.len(), 2);
+assert_eq!(agg.total_messages(), 8);
+assert_eq!(agg.date_span(), Some((0, 86_400)));
+
+for (report, record) in agg.records() {
+    println!(
+        "{} sent {} message(s) (from report {})",
+        record.row.source_ip,
+        record.row.count,
+        report.report_metadata.report_id,
+    );
+}
+```
+
 ## Working with the report
 
 Once parsed, you can access every field of the RFC 7489 schema through the

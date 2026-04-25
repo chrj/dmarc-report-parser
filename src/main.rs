@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, ValueEnum};
 
-use dmarc_report_parser::Report;
+use dmarc_report_parser::{Aggregate, Report};
 
 mod render;
 
@@ -13,11 +13,15 @@ mod render;
 // ──────────────────────────────────────────────────────────────────────────────
 
 /// Display DMARC aggregate reports in the terminal, as HTML, or as Markdown.
+///
+/// Pass multiple files to render them as a single aggregate view with a
+/// combined records table.
 #[derive(Parser)]
 #[command(name = "dmarc-report", version, about)]
 struct Cli {
-    /// Path to a DMARC report file (.xml, .xml.gz, .zip, or .gz).
-    file: PathBuf,
+    /// One or more DMARC report files (.xml, .xml.gz, .zip, or .gz).
+    #[arg(required = true, num_args = 1..)]
+    files: Vec<PathBuf>,
 
     /// Output format.
     #[arg(short, long, value_enum, default_value_t = Format::Terminal)]
@@ -51,12 +55,26 @@ fn main() {
 }
 
 fn run(cli: Cli) -> Result<(), String> {
-    let report = load_report(&cli.file)?;
+    let reports: Vec<Report> = cli
+        .files
+        .iter()
+        .map(|path| load_report(path).map_err(|e| format!("{}: {e}", path.display())))
+        .collect::<Result<_, _>>()?;
 
-    let rendered = match cli.format {
-        Format::Terminal => render::terminal(&report),
-        Format::Html => render::html(&report),
-        Format::Markdown => render::markdown(&report),
+    let rendered = if reports.len() == 1 {
+        let report = &reports[0];
+        match cli.format {
+            Format::Terminal => render::terminal(report),
+            Format::Html => render::html(report),
+            Format::Markdown => render::markdown(report),
+        }
+    } else {
+        let agg = Aggregate::from_reports(reports);
+        match cli.format {
+            Format::Terminal => render::terminal_aggregate(&agg),
+            Format::Html => render::html_aggregate(&agg),
+            Format::Markdown => render::markdown_aggregate(&agg),
+        }
     };
 
     match cli.output {
