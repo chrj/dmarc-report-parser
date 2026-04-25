@@ -3,8 +3,11 @@ mod markdown_fmt;
 mod terminal_fmt;
 
 pub use html_fmt::render as html;
+pub use html_fmt::render_aggregate as html_aggregate;
 pub use markdown_fmt::render as markdown;
+pub use markdown_fmt::render_aggregate as markdown_aggregate;
 pub use terminal_fmt::render as terminal;
+pub use terminal_fmt::render_aggregate as terminal_aggregate;
 
 use chrono::DateTime;
 use dmarc_report_parser::{AlignmentMode, DkimResult, DmarcResult, SpfResult};
