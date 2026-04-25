@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.9](https://github.com/chrj/dmarc-report-parser/compare/v0.1.8...v0.1.9) - 2026-04-15
+
+### Fixed
+
+- Use path.extension for extension parsing, CLI tests. ([#26](https://github.com/chrj/dmarc-report-parser/pull/26))
+
+### Other
+
+- Update CI for branch deletion. ([#24](https://github.com/chrj/dmarc-report-parser/pull/24))
+
 ## [0.1.8](https://github.com/chrj/dmarc-report-parser/compare/v0.1.7...v0.1.8) - 2026-04-13
 
 ### Other
