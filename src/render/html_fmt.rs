@@ -1,6 +1,8 @@
 use dmarc_report_parser::{Aggregate, DkimResult, DmarcResult, Record, Report, SpfResult};
 
-use super::{alignment_label, dkim_pass, dmarc_pass, format_timestamp, spf_pass};
+use super::{
+    aggregate_summary, alignment_label, dkim_pass, dmarc_pass, format_timestamp, spf_pass,
+};
 
 const HTML_HEAD: &str = r#"<!DOCTYPE html>
 <html lang="en">
@@ -140,18 +142,13 @@ pub fn render_aggregate(agg: &Aggregate) -> String {
 
     html.push_str("<h1>DMARC Aggregate Report</h1>\n");
 
+    let (record_count, total_messages, pass_count) = aggregate_summary(agg);
+
     // Overview card
     html.push_str("<div class=\"card\">\n<h2>Overview</h2>\n<div class=\"summary\">\n");
     summary_item(&mut html, &agg.reports.len().to_string(), "Reports");
-    summary_item(&mut html, &agg.records().count().to_string(), "Records");
-    summary_item(&mut html, &agg.total_messages().to_string(), "Messages");
-    let pass_count: u64 = agg
-        .records()
-        .filter(|(_, r)| {
-            dmarc_pass(r.row.policy_evaluated.dkim) && dmarc_pass(r.row.policy_evaluated.spf)
-        })
-        .map(|(_, r)| r.row.count)
-        .sum();
+    summary_item(&mut html, &record_count.to_string(), "Records");
+    summary_item(&mut html, &total_messages.to_string(), "Messages");
     summary_item(&mut html, &pass_count.to_string(), "Fully Passing");
     html.push_str("</div>\n");
     if let Some((begin, end)) = agg.date_span() {
@@ -277,7 +274,11 @@ fn record_row(record: &Record, report_id: Option<&str>) -> String {
 }
 
 fn dl_row(html: &mut String, label: &str, value: &str) {
-    html.push_str(&format!("<dt>{label}</dt><dd>{value}</dd>\n"));
+    html.push_str(&format!(
+        "<dt>{}</dt><dd>{}</dd>\n",
+        escape(label),
+        escape(value)
+    ));
 }
 
 fn summary_item(html: &mut String, value: &str, label: &str) {

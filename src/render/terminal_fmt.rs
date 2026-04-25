@@ -1,7 +1,9 @@
 use colored::Colorize;
 use dmarc_report_parser::{Aggregate, DkimResult, DmarcResult, Record, Report, SpfResult};
 
-use super::{alignment_label, dkim_pass, dmarc_pass, format_timestamp, spf_pass};
+use super::{
+    aggregate_summary, alignment_label, dkim_pass, dmarc_pass, format_timestamp, spf_pass,
+};
 
 /// Render a DMARC report as colorized terminal output.
 pub fn render(report: &Report) -> String {
@@ -97,15 +99,9 @@ pub fn render_aggregate(agg: &Aggregate) -> String {
             format_timestamp(end).green()
         ));
     }
-    out.push_str(&format!("  Total Records  : {}\n", agg.records().count()));
-    out.push_str(&format!("  Total Messages : {}\n", agg.total_messages()));
-    let pass_count: u64 = agg
-        .records()
-        .filter(|(_, r)| {
-            dmarc_pass(r.row.policy_evaluated.dkim) && dmarc_pass(r.row.policy_evaluated.spf)
-        })
-        .map(|(_, r)| r.row.count)
-        .sum();
+    let (record_count, total_messages, pass_count) = aggregate_summary(agg);
+    out.push_str(&format!("  Total Records  : {record_count}\n"));
+    out.push_str(&format!("  Total Messages : {total_messages}\n"));
     out.push_str(&format!("  Fully Passing  : {pass_count}\n\n"));
 
     // ── Contributing reports ─────────────────────────────────────────────
@@ -130,8 +126,8 @@ pub fn render_aggregate(agg: &Aggregate) -> String {
     out.push_str(&format!(
         "{} ({} record(s), {} message(s))\n\n",
         "▶ Records".bold().underline(),
-        agg.records().count(),
-        agg.total_messages(),
+        record_count,
+        total_messages,
     ));
 
     for (report, record) in agg.records() {

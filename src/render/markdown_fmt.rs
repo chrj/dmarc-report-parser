@@ -1,6 +1,8 @@
 use dmarc_report_parser::{Aggregate, DkimResult, DmarcResult, Record, Report, SpfResult};
 
-use super::{alignment_label, dkim_pass, dmarc_pass, format_timestamp, spf_pass};
+use super::{
+    aggregate_summary, alignment_label, dkim_pass, dmarc_pass, format_timestamp, spf_pass,
+};
 
 /// Render a DMARC report as Markdown.
 pub fn render(report: &Report) -> String {
@@ -96,15 +98,9 @@ pub fn render_aggregate(agg: &Aggregate) -> String {
             format_timestamp(end)
         ));
     }
-    md.push_str(&format!("- **Total Records:** {}\n", agg.records().count()));
-    md.push_str(&format!("- **Total Messages:** {}\n", agg.total_messages()));
-    let pass_count: u64 = agg
-        .records()
-        .filter(|(_, r)| {
-            dmarc_pass(r.row.policy_evaluated.dkim) && dmarc_pass(r.row.policy_evaluated.spf)
-        })
-        .map(|(_, r)| r.row.count)
-        .sum();
+    let (record_count, total_messages, pass_count) = aggregate_summary(agg);
+    md.push_str(&format!("- **Total Records:** {record_count}\n"));
+    md.push_str(&format!("- **Total Messages:** {total_messages}\n"));
     md.push_str(&format!(
         "- **Fully Passing (DKIM + SPF):** {pass_count}\n\n"
     ));
