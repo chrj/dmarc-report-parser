@@ -13,14 +13,14 @@ cargo install dmarc-report-parser --features cli
 ## Synopsis
 
 ```text
-dmarc-report [OPTIONS] <FILE>
+dmarc-report [OPTIONS] <FILES>...
 ```
 
 ### Arguments
 
 | Argument | Description |
 |----------|-------------|
-| `<FILE>` | Path to a DMARC report file (`.xml`, `.xml.gz`, `.gz`, or `.zip`) |
+| `<FILES>...` | One or more DMARC report files (`.xml`, `.xml.gz`, `.gz`, or `.zip`). When more than one file is given, the output is an aggregate view across all of them. |
 
 ### Options
 
@@ -70,6 +70,29 @@ The CLI automatically detects the file format from the file extension:
 | `.gz`, `.xml.gz` | Decompressed with gzip, then parsed |
 | `.zip` | The first `.xml` entry is extracted and parsed |
 
+## Aggregating multiple reports
+
+Pass two or more files to render them as a single aggregate view. The output
+contains:
+
+- An **overview** with the total reports, records, messages, and the combined
+  date span.
+- A **reports** section listing each contributing report (organisation,
+  report ID, domain, period, record and message counts).
+- A combined **records** table with an extra `Report` column that identifies
+  which report each row came from.
+
+Each report retains its own metadata; nothing is fabricated by combining
+fields like `policy_published` across reports.
+
+```sh
+# Aggregate every gzip-compressed report in the current directory
+dmarc-report *.xml.gz
+
+# Render an aggregate as a single HTML document
+dmarc-report q1/*.xml q2/*.xml --format html --output combined.html
+```
+
 ## Examples
 
 ```sh
@@ -87,4 +110,7 @@ dmarc-report report.xml --format html --output report.html
 
 # Pipe Markdown output into another tool
 dmarc-report report.xml --format markdown | less
+
+# Aggregate multiple reports into one Markdown table
+dmarc-report jan/*.xml.gz --format markdown
 ```
