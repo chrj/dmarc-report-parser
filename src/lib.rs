@@ -14,6 +14,49 @@ pub use error::Error;
 
 use serde::Deserialize;
 
+fn deserialize_optional_alignment<'de, D>(
+    deserializer: D,
+) -> Result<Option<AlignmentMode>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    struct Visitor;
+
+    impl<'de> serde::de::Visitor<'de> for Visitor {
+        type Value = Option<AlignmentMode>;
+
+        fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("alignment mode 'r', 's', or empty")
+        }
+
+        fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<Self::Value, E> {
+            match v {
+                "" => Ok(None),
+                "r" => Ok(Some(AlignmentMode::Relaxed)),
+                "s" => Ok(Some(AlignmentMode::Strict)),
+                other => Err(E::unknown_variant(other, &["r", "s"])),
+            }
+        }
+
+        fn visit_map<A: serde::de::MapAccess<'de>>(
+            self,
+            mut map: A,
+        ) -> Result<Self::Value, A::Error> {
+            // quick-xml represents <adkim></adkim> as {"$text": ""} rather than a plain string
+            let mut text = String::new();
+            while let Some(key) = map.next_key::<String>()? {
+                let val: String = map.next_value()?;
+                if key == "$text" {
+                    text = val;
+                }
+            }
+            self.visit_str(&text)
+        }
+    }
+
+    deserializer.deserialize_any(Visitor)
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Public API
 // ──────────────────────────────────────────────────────────────────────────────
@@ -105,11 +148,11 @@ pub struct PolicyPublished {
     pub domain: String,
 
     /// DKIM alignment mode (`r` = relaxed, `s` = strict). Defaults to relaxed when absent.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_optional_alignment")]
     pub adkim: Option<AlignmentMode>,
 
     /// SPF alignment mode (`r` = relaxed, `s` = strict). Defaults to relaxed when absent.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_optional_alignment")]
     pub aspf: Option<AlignmentMode>,
 
     /// Domain-level policy action.
@@ -911,6 +954,35 @@ mod tests {
         let report = parse(&xml_strict).unwrap();
         assert_eq!(report.policy_published.adkim, Some(AlignmentMode::Strict));
         assert_eq!(report.policy_published.aspf, Some(AlignmentMode::Strict));
+    }
+
+    #[test]
+    fn parse_empty_alignment_modes() {
+        let xml = r#"<?xml version="1.0"?>
+<feedback>
+  <report_metadata>
+    <org_name>R</org_name><email>r@r.example</email>
+    <report_id>r1</report_id>
+    <date_range><begin>0</begin><end>1</end></date_range>
+  </report_metadata>
+  <policy_published>
+    <domain>example.com</domain>
+    <adkim></adkim>
+    <aspf></aspf>
+    <p>none</p><sp>none</sp><pct>100</pct>
+  </policy_published>
+  <record>
+    <row><source_ip>192.0.2.1</source_ip><count>1</count>
+      <policy_evaluated><disposition>none</disposition><dkim>pass</dkim><spf>pass</spf></policy_evaluated>
+    </row>
+    <identifiers><envelope_from>example.com</envelope_from><header_from>example.com</header_from></identifiers>
+    <auth_results><spf><domain>example.com</domain><result>pass</result></spf></auth_results>
+  </record>
+</feedback>"#;
+
+        let report = parse(xml).unwrap();
+        assert!(report.policy_published.adkim.is_none());
+        assert!(report.policy_published.aspf.is_none());
     }
 
     #[test]
