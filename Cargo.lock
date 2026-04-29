@@ -204,7 +204,7 @@ checksum = "6184e33543162437515c2e2b48714794e37845ec9851711914eec9d308f6ebe8"
 
 [[package]]
 name = "dmarc-report-parser"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "assert_cmd",
  "chrono",
