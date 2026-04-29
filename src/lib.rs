@@ -14,7 +14,9 @@ pub use error::Error;
 
 use serde::Deserialize;
 
-fn deserialize_optional_alignment<'de, D>(deserializer: D) -> Result<Option<AlignmentMode>, D::Error>
+fn deserialize_optional_alignment<'de, D>(
+    deserializer: D,
+) -> Result<Option<AlignmentMode>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -36,7 +38,10 @@ where
             }
         }
 
-        fn visit_map<A: serde::de::MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+        fn visit_map<A: serde::de::MapAccess<'de>>(
+            self,
+            mut map: A,
+        ) -> Result<Self::Value, A::Error> {
             // quick-xml represents <adkim></adkim> as {"$text": ""} rather than a plain string
             let mut text = String::new();
             while let Some(key) = map.next_key::<String>()? {
