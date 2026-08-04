@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1](https://github.com/chrj/dmarc-report-parser/compare/v0.2.0...v0.2.1) - 2026-08-04
+
+### Fixed
+
+- [37] Update anyhow to 1.0.104. ([#38](https://github.com/chrj/dmarc-report-parser/pull/38))
+- [33][34] Upgrade quick-xml to 0.41. ([#35](https://github.com/chrj/dmarc-report-parser/pull/35))
+
 ## [0.2.0](https://github.com/chrj/dmarc-report-parser/compare/v0.1.8...v0.2.0) - 2026-04-15
 
 ### Fixed
