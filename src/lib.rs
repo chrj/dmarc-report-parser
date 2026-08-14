@@ -8,6 +8,7 @@
 //! # CLI
 //!
 #![doc = include_str!("../docs/cli-usage.md")]
+#![warn(missing_docs)]
 
 mod error;
 pub use error::Error;
