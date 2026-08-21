@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2](https://github.com/chrj/dmarc-report-parser/compare/v0.2.1...v0.2.2) - 2026-08-21
+
+### Other
+
+- let dist own the action versions of the release workflow ([#45](https://github.com/chrj/dmarc-report-parser/pull/45))
+- warn on missing documentation ([#43](https://github.com/chrj/dmarc-report-parser/pull/43))
+- bump the actions group with 5 updates ([#41](https://github.com/chrj/dmarc-report-parser/pull/41))
+- *(deps)* bump the cargo-deps group with 6 updates ([#42](https://github.com/chrj/dmarc-report-parser/pull/42))
+- add dependabot configuration ([#39](https://github.com/chrj/dmarc-report-parser/pull/39))
+
 ## [0.2.1](https://github.com/chrj/dmarc-report-parser/compare/v0.2.0...v0.2.1) - 2026-08-04
 
 ### Fixed
