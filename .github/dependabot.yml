@@ -11,6 +11,12 @@ updates:
       actions:
         patterns:
           - "*"
+    # dist generates release.yml, the only workflow with these two actions.
+    # A bump from dependabot makes the file differ from dist and stops the
+    # release run. dist-workspace.toml carries the versions instead.
+    ignore:
+      - dependency-name: actions/upload-artifact
+      - dependency-name: actions/download-artifact
 
   # release-plz decides on the packaged contents of the crate, not on the
   # prefix, so a prefix that reads true is enough here.
