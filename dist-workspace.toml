@@ -15,3 +15,11 @@ ci = "github"
 installers = []
 # Which actions to run on pull requests
 pr-run-mode = "plan"
+
+# dist owns .github/workflows/release.yml. If the file differs from what dist
+# generates, the release run stops.
+# These pins hold the actions in that file at the versions the other workflows use.
+[dist.github-action-commits]
+"actions/checkout" = "v7"
+"actions/upload-artifact" = "v7"
+"actions/download-artifact" = "v8"
