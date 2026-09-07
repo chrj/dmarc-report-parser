@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2](https://github.com/chrj/dmarc-report-parser/compare/v0.2.1...v0.2.2) - 2026-09-04
+
+### Other
+
+- *(deps)* bump flate2 from 1.1.9 to 1.1.10 in the cargo-deps group ([#47](https://github.com/chrj/dmarc-report-parser/pull/47))
+- *(deps)* bump quick-xml from 0.41.0 to 0.42.0 ([#46](https://github.com/chrj/dmarc-report-parser/pull/46))
+- let dist own the action versions of the release workflow ([#45](https://github.com/chrj/dmarc-report-parser/pull/45))
+- warn on missing documentation ([#43](https://github.com/chrj/dmarc-report-parser/pull/43))
+- bump the actions group with 5 updates ([#41](https://github.com/chrj/dmarc-report-parser/pull/41))
+- *(deps)* bump the cargo-deps group with 6 updates ([#42](https://github.com/chrj/dmarc-report-parser/pull/42))
+- add dependabot configuration ([#39](https://github.com/chrj/dmarc-report-parser/pull/39))
+
 ## [0.2.1](https://github.com/chrj/dmarc-report-parser/compare/v0.2.0...v0.2.1) - 2026-08-04
 
 ### Fixed
