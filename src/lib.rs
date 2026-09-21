@@ -552,6 +552,13 @@ impl TryFrom<&[u8]> for Report {
     }
 }
 
+/// The README shows the same calls as the documentation above. This anchor gives
+/// its code blocks to rustdoc as doctests, so a change to the API that the README
+/// misses breaks the test run. It is not part of the public documentation.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+struct ReadmeExamples;
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Unit tests
 // ──────────────────────────────────────────────────────────────────────────────
