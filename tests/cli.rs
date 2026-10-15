@@ -37,6 +37,34 @@ fn minimal_xml_to_stdout_markdown() {
 }
 
 #[test]
+fn zip_with_xml_entry_is_parsed() {
+    // The fixture holds minimal.xml as "MINIMAL.XML" to cover the
+    // case-insensitive match on the entry name.
+    let mut cmd = Command::cargo_bin("dmarc-report").unwrap();
+    cmd.arg("tests/fixtures/minimal.zip")
+        .arg("--format")
+        .arg("markdown");
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Acme"))
+        .stdout(predicate::str::contains("| Source IP |"));
+}
+
+#[test]
+fn zip_without_xml_entry_fails() {
+    let mut cmd = Command::cargo_bin("dmarc-report").unwrap();
+    cmd.arg("tests/fixtures/no-xml.zip");
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("no-xml.zip"))
+        .stderr(predicate::str::contains(
+            "Failed to read zip: No .xml file found in the zip archive",
+        ));
+}
+
+#[test]
 fn aggregate_two_files_markdown() {
     let mut cmd = Command::cargo_bin("dmarc-report").unwrap();
     cmd.arg("tests/fixtures/minimal.xml")
