@@ -121,7 +121,10 @@ fn extract_xml_from_zip(path: &PathBuf) -> Result<Vec<u8>, io::Error> {
         let mut entry = archive
             .by_index(i)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-        let name = entry.name().to_lowercase();
+        let name = entry
+            .name()
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?
+            .to_lowercase();
         if name.ends_with(".xml") {
             let mut buf = Vec::new();
             entry.read_to_end(&mut buf)?;
