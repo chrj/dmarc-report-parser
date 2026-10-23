@@ -14,7 +14,7 @@ for viewing reports in the terminal, as HTML, or as Markdown.
 - Zero-copy deserialization into strongly-typed Rust structs
 - `FromStr`, `TryFrom<&str>`, and `TryFrom<&[u8]>` trait implementations for ergonomic usage
 - Optional CLI with colorized terminal output, HTML, and Markdown rendering
-- CLI supports `.xml`, `.xml.gz`, `.gz`, and `.zip` input files. It stops with an error when a compressed file is larger than 64 MiB after decompression
+- CLI supports `.xml`, `.xml.gz`, `.gz`, and `.zip` input files. It stops with an error when a compressed file is larger than 64 MiB after decompression (change the limit with `--max-size`)
 - CLI accepts multiple files and renders them as a single aggregate view
 
 ## Installation
@@ -162,6 +162,8 @@ Options:
   -f, --format <FORMAT>  Output format [default: terminal]
                          [possible values: terminal, html, markdown]
   -o, --output <FILE>    Write output to a file instead of stdout
+      --max-size <MIB>   Largest size in MiB of a compressed report after
+                         decompression [default: 64]
   -h, --help             Print help
   -V, --version          Print version
 ```
@@ -180,6 +182,9 @@ dmarc-report report.xml.gz --format markdown
 
 # Parse a report inside a zip archive
 dmarc-report report.zip
+
+# Read a compressed report that is larger than 64 MiB after decompression
+dmarc-report large-report.xml.gz --max-size 256
 
 # Aggregate multiple reports into a single Markdown view
 dmarc-report *.xml.gz --format markdown
