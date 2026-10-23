@@ -93,6 +93,11 @@ fn run(cli: Cli) -> Result<(), String> {
 // File loading & extraction
 // ──────────────────────────────────────────────────────────────────────────────
 
+/// The largest report the CLI reads after decompression. Real aggregate
+/// reports are a few MB at most. Reports come from other domains, so a small
+/// compressed file must not be able to use up all memory.
+const MAX_REPORT_BYTES: u64 = 64 * 1024 * 1024;
+
 fn load_report(path: &PathBuf) -> Result<Report, String> {
     let ext = path
         .extension()
@@ -101,8 +106,10 @@ fn load_report(path: &PathBuf) -> Result<Report, String> {
         .to_ascii_lowercase();
 
     let xml_bytes = match ext.as_str() {
-        "zip" => extract_xml_from_zip(path).map_err(|e| format!("Failed to read zip: {e}"))?,
-        "gz" => decompress_gzip(path).map_err(|e| format!("Failed to decompress gzip: {e}"))?,
+        "zip" => extract_xml_from_zip(path, MAX_REPORT_BYTES)
+            .map_err(|e| format!("Failed to read zip: {e}"))?,
+        "gz" => decompress_gzip(path, MAX_REPORT_BYTES)
+            .map_err(|e| format!("Failed to decompress gzip: {e}"))?,
         _ => fs::read(path).map_err(|e| format!("Failed to read file: {e}"))?,
     };
 
@@ -112,13 +119,13 @@ fn load_report(path: &PathBuf) -> Result<Report, String> {
     dmarc_report_parser::parse(xml).map_err(|e| format!("Failed to parse DMARC report: {e}"))
 }
 
-fn extract_xml_from_zip(path: &PathBuf) -> Result<Vec<u8>, io::Error> {
+fn extract_xml_from_zip(path: &PathBuf, limit: u64) -> Result<Vec<u8>, io::Error> {
     let file = fs::File::open(path)?;
     let mut archive =
         zip::ZipArchive::new(file).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
     for i in 0..archive.len() {
-        let mut entry = archive
+        let entry = archive
             .by_index(i)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
         let name = entry
@@ -126,9 +133,7 @@ fn extract_xml_from_zip(path: &PathBuf) -> Result<Vec<u8>, io::Error> {
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?
             .to_lowercase();
         if name.ends_with(".xml") {
-            let mut buf = Vec::new();
-            entry.read_to_end(&mut buf)?;
-            return Ok(buf);
+            return read_limited(entry, limit);
         }
     }
 
@@ -138,10 +143,78 @@ fn extract_xml_from_zip(path: &PathBuf) -> Result<Vec<u8>, io::Error> {
     ))
 }
 
-fn decompress_gzip(path: &PathBuf) -> Result<Vec<u8>, io::Error> {
+fn decompress_gzip(path: &PathBuf, limit: u64) -> Result<Vec<u8>, io::Error> {
     let file = fs::File::open(path)?;
-    let mut decoder = flate2::read::GzDecoder::new(file);
+    read_limited(flate2::read::GzDecoder::new(file), limit)
+}
+
+/// Reads all of `reader`, but fails with `InvalidData` when it holds more
+/// than `limit` bytes.
+fn read_limited(reader: impl Read, limit: u64) -> Result<Vec<u8>, io::Error> {
     let mut buf = Vec::new();
-    decoder.read_to_end(&mut buf)?;
+    reader.take(limit + 1).read_to_end(&mut buf)?;
+    if buf.len() as u64 > limit {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("data is larger than {limit} bytes when decompressed"),
+        ));
+    }
     Ok(buf)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    #[test]
+    fn read_limited_accepts_input_up_to_the_limit() {
+        let cases: [(&[u8], u64); 3] = [(b"", 4), (b"abc", 4), (b"abcd", 4)];
+        for (input, limit) in cases {
+            let got = read_limited(input, limit).unwrap();
+            assert_eq!(got, input);
+        }
+    }
+
+    #[test]
+    fn read_limited_rejects_input_over_the_limit() {
+        let err = read_limited(&b"abcde"[..], 4).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        assert_eq!(
+            err.to_string(),
+            "data is larger than 4 bytes when decompressed"
+        );
+    }
+
+    #[test]
+    fn gzip_over_the_limit_is_rejected() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("bomb.xml.gz");
+        let mut encoder = flate2::write::GzEncoder::new(
+            fs::File::create(&path).unwrap(),
+            flate2::Compression::best(),
+        );
+        encoder.write_all(&[b'a'; 1024]).unwrap();
+        encoder.finish().unwrap();
+
+        let err = decompress_gzip(&path, 1023).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        assert!(decompress_gzip(&path, 1024).is_ok());
+    }
+
+    #[test]
+    fn zip_entry_over_the_limit_is_rejected() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("bomb.zip");
+        let mut writer = zip::ZipWriter::new(fs::File::create(&path).unwrap());
+        writer
+            .start_file("report.xml", zip::write::SimpleFileOptions::default())
+            .unwrap();
+        writer.write_all(&[b'a'; 1024]).unwrap();
+        writer.finish().unwrap();
+
+        let err = extract_xml_from_zip(&path, 1023).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        assert!(extract_xml_from_zip(&path, 1024).is_ok());
+    }
 }
