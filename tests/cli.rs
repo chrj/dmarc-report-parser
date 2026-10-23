@@ -181,3 +181,32 @@ fn html_period_separator_is_not_double_escaped() {
         "Expected a Period row containing a Unicode arrow"
     );
 }
+
+#[test]
+fn gzip_over_max_size_fails_with_a_hint() {
+    // The fixture expands to 1 MiB + 1 byte.
+    let mut cmd = Command::cargo_bin("dmarc-report").unwrap();
+    cmd.arg("tests/fixtures/over-1mib.xml.gz")
+        .arg("--max-size")
+        .arg("1");
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("over-1mib.xml.gz"))
+        .stderr(predicate::str::contains(
+            "Failed to decompress gzip: report is larger than 1 MiB after decompression. \
+             To read it, run again with a larger --max-size",
+        ));
+}
+
+#[test]
+fn max_size_of_zero_is_rejected() {
+    let mut cmd = Command::cargo_bin("dmarc-report").unwrap();
+    cmd.arg("tests/fixtures/minimal.xml")
+        .arg("--max-size")
+        .arg("0");
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("--max-size"));
+}
