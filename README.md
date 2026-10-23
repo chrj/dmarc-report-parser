@@ -14,7 +14,7 @@ for viewing reports in the terminal, as HTML, or as Markdown.
 - Zero-copy deserialization into strongly-typed Rust structs
 - `FromStr`, `TryFrom<&str>`, and `TryFrom<&[u8]>` trait implementations for ergonomic usage
 - Optional CLI with colorized terminal output, HTML, and Markdown rendering
-- CLI supports `.xml`, `.xml.gz`, `.gz`, and `.zip` input files
+- CLI supports `.xml`, `.xml.gz`, `.gz`, and `.zip` input files. It stops with an error when a compressed file is larger than 64 MiB after decompression
 - CLI accepts multiple files and renders them as a single aggregate view
 
 ## Installation
