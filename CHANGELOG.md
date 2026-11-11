@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4](https://github.com/chrj/dmarc-report-parser/compare/v0.2.3...v0.2.4) - 2026-11-11
+
+### Other
+
+- fix the security audit when it finds a warning ([#59](https://github.com/chrj/dmarc-report-parser/pull/59))
+
 ## [0.2.3](https://github.com/chrj/dmarc-report-parser/compare/v0.2.2...v0.2.3) - 2026-10-23
 
 ### Fixed
