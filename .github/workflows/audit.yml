@@ -8,8 +8,11 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
+# audit-check writes a check run when it finds a warning, and opens an issue
+# on the scheduled run. Without checks: write, a warning fails the job.
 permissions:
   contents: read
+  checks: write
   issues: write
 
 jobs:
